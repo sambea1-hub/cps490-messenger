@@ -228,5 +228,5 @@ The Messenger project is complete when all of the following conditions are verif
 
 | Role | Name | Signature / Approval | Date |
 |---|---|---|---|
-| **Student Engineer** | Amar Sambe | [Pending Submission] | October 11, 2026 |
+| **Student Engineer** | Amar Sambe | [Submitted] | October 11, 2026 |
 | **Course Instructor / Evaluator** | CPS 490 Faculty Advisor | [Pending Review] | October 12, 2026 |
