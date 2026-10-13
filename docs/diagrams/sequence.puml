@@ -1,0 +1,84 @@
+@startuml sequence
+!theme plain
+skinparam monochrome false
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam sequenceMessageAlign center
+
+title Sequence Diagram - Direct Message Lifecycle: Validation, Delivery, Offline Fallback, and Errors
+
+actor "User Alpha\n(Sender)" as UserA
+participant "Web Client A\n(Browser SPA)" as ClientA
+participant "API Gateway &\nAuth Middleware" as Gateway
+participant "WebSocket Gateway\n& Connection Hub" as WSHub
+database "Persistence Database\n(PostgreSQL / SQLite)" as DB
+participant "Web Client B\n(Browser SPA)" as ClientB
+actor "User Beta\n(Recipient)" as UserB
+
+== Phase 1: Message Submission and Client Validation ==
+
+UserA -> ClientA : Types text and submits direct message
+activate ClientA
+
+alt Message Length > 2,000 Characters [FR-14 Input Constraint]
+    ClientA --> UserA : Display validation error ("Message exceeds 2,000 characters")
+else Valid Message Length (<= 2,000 Characters)
+    ClientA -> Gateway : Send direct message event (recipient_id, body, auth_token)
+    activate Gateway
+   
+    == Phase 2: Authentication and Authorization Verification ==
+   
+    alt Invalid or Expired Token [FR-04 Route Authorization Failure]
+        Gateway --> ClientA : Return HTTP 401 Unauthorized / Socket Error
+        ClientA --> UserA : Display auth error and prompt re-login
+    else Valid Session Token
+        Gateway -> DB : INSERT INTO direct_messages (sender_id, recipient_id, body, sent_at)
+        activate DB
+        DB --> Gateway : Confirm write (message_id, created_at)
+        deactivate DB
+       
+        Gateway --> ClientA : Return confirmation status (status: "persisted", message_id)
+        ClientA --> UserA : Update message state to "Sent" (render checkmark)
+       
+        == Phase 3: Real-Time Routing and Connection State ==
+       
+        Gateway -> WSHub : Dispatch routing event (recipient_id, payload)
+        activate WSHub
+        WSHub -> WSHub : Check recipient socket handle in active registry
+       
+        alt Recipient Beta is Online [FR-05, FR-06 Real-Time Direct Delivery]
+            WSHub -> ClientB : Push direct_message event (message_id, sender_id, body, sent_at)
+            activate ClientB
+            ClientB -> ClientB : Sanitize payload and update local state [NFR-04]
+            ClientB -> ClientB : Dynamically insert DOM element into active view [FR-16]
+            ClientB --> UserB : Display message dynamically in under 200 ms [NFR-01]
+            ClientB --> WSHub : Acknowledge frame receipt
+            deactivate ClientB
+        else Recipient Beta is Offline [FR-07 Offline Persistence]
+            WSHub -> WSHub : Recipient socket unavailable; drop push routing
+            note over WSHub, DB : Message remains safely stored in database for subsequent retrieval
+        end
+        deactivate WSHub
+    end
+    deactivate Gateway
+end
+deactivate ClientA
+
+== Phase 4: Offline Recipient Reconnection and History Recovery ==
+
+note over UserB, ClientB : User Beta connects at a later time and opens conversation
+UserB -> ClientB : Logs in and opens conversation with User Alpha
+activate ClientB
+ClientB -> Gateway : GET /api/messages/direct/:userAlphaId (with valid token)
+activate Gateway
+Gateway -> DB : SELECT * FROM direct_messages WHERE participants MATCH (Alpha, Beta) ORDER BY sent_at ASC
+activate DB
+DB --> Gateway : Return chronological message records [FR-07, FR-08]
+deactivate DB
+Gateway --> ClientB : Return HTTP 200 OK with message history array
+ClientB -> ClientB : Render past messages in chronological order [FR-08]
+ClientB --> UserB : Display complete conversation history
+deactivate Gateway
+deactivate ClientB
+
+@enduml

@@ -1,0 +1,73 @@
+@startuml data-flow
+!theme plain
+skinparam monochrome false
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam roundCorner 8
+
+title Data Flow Diagram (DFD Level 1) - Messenger Communication Platform
+
+' External Entities
+actor "Unauthenticated Visitor" as Visitor
+actor "Registered Member (Sender)" as Sender
+actor "Registered Member (Recipient)" as Recipient
+actor "Channel Administrator" as Admin
+
+' Processes
+rectangle "1.0 Authenticate\nand Manage Sessions" as P1 #E8F0FE
+rectangle "2.0 Process Direct\nMessaging" as P2 #E8F0FE
+rectangle "3.0 Manage Channels\nand Memberships" as P3 #E8F0FE
+rectangle "4.0 Broadcast\nChannel Messages" as P4 #E8F0FE
+
+' Data Stores
+database "D1: Users Store" as D1 #FEF7E0
+database "D2: Direct Messages Store" as D2 #FEF7E0
+database "D3: Channels and Memberships Store" as D3 #FEF7E0
+database "D4: Channel Messages Store" as D4 #FEF7E0
+
+' In-Memory State Hub
+queue "Active WebSocket\nConnection Hub" as SocketHub #E6F4EA
+
+' Process 1.0 Data Flows
+Visitor --> P1 : Registration credentials (username, password)
+Visitor --> P1 : Login credentials (username, password)
+P1 --> D1 : Store salted password hash and profile
+D1 --> P1 : Retrieve credential hash and user identity
+P1 --> Visitor : Return signed session token / auth error
+P1 --> SocketHub : Register authenticated socket session
+
+' Process 2.0 Data Flows
+Sender --> P2 : Send direct message payload (recipient_id, body) + token
+P2 --> P1 : Validate session token
+P1 --> P2 : Token validation and sender identity
+P2 --> D2 : Persist message record with server timestamp
+P2 --> SocketHub : Query recipient connection state
+SocketHub --> P2 : Recipient socket handle / offline indicator
+P2 --> Recipient : Push real-time message frame (if connected)
+Recipient --> P2 : Direct message history request (peer_id) + token
+P2 --> D2 : Query message archive by user pair
+D2 --> P2 : Chronological direct message records
+P2 --> Recipient : Chronological message history stream
+
+' Process 3.0 Data Flows
+Admin --> P3 : Create channel request (name) + token
+P3 --> D3 : Persist channel metadata and creator admin record
+Sender --> P3 : Browse channels / join channel request + token
+P3 --> D3 : Record channel membership association
+D3 --> P3 : Query channels and participant rosters
+P3 --> Sender : Channel catalog and roster data
+
+' Process 4.0 Data Flows
+Sender --> P4 : Submit channel message (channel_id, body) + token
+P4 --> D3 : Verify sender channel membership
+D3 --> P4 : Membership verification and roster IDs
+P4 --> D4 : Persist channel message record with timestamp
+P4 --> SocketHub : Query active sockets for channel roster
+SocketHub --> P4 : Active recipient socket handles
+P4 --> Recipient : Push real-time channel broadcast frame
+Recipient --> P4 : Channel history request (channel_id) + token
+P4 --> D4 : Query channel message archive
+D4 --> P4 : Chronological channel message records
+P4 --> Recipient : Paginated channel history response
+
+@enduml
