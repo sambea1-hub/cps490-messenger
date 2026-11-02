@@ -121,7 +121,7 @@ Fixed boundaries and mandatory restrictions that the project must respect:
 External technical tools, runtime dependencies, and review gates required for project completion:
 
 * **D1 (Container Tooling):** Operational access to Docker Engine (v24+) and Docker Compose (v2+) on host execution environments.
-* **D2 (Relational Database Support):** Stable container base images for PostgreSQL 16 or SQLite 3 with write-ahead logging support.
+* **D2 (MongoDB Document Database Support):** Stable container base images for MongoDB 7 with Mongoose with write-ahead logging support.
 * **D3 (Course Review Feedback):** Timely instructor feedback on this Statement of Work baseline to guide downstream development stages.
 
 ---

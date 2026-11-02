@@ -1,0 +1,17 @@
+{
+  "name": "cps490-messenger",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Messenger: Real-Time Private and Group Communication Platform",
+  "workspaces": [
+    "server",
+    "client"
+  ],
+  "scripts": {
+    "start": "npm --workspace=server start",
+    "dev:server": "npm --workspace=server run dev",
+    "dev:client": "npm --workspace=client run dev",
+    "build": "npm --workspace=client run build",
+    "test": "npm --workspace=server test"
+  }
+}

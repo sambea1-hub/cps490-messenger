@@ -11,7 +11,7 @@ actor "User Alpha\n(Sender)" as UserA
 participant "Web Client A\n(Browser SPA)" as ClientA
 participant "API Gateway &\nAuth Middleware" as Gateway
 participant "WebSocket Gateway\n& Connection Hub" as WSHub
-database "Persistence Database\n(PostgreSQL / SQLite)" as DB
+database "Persistence Database\n(MongoDB with Mongoose)" as DB
 participant "Web Client B\n(Browser SPA)" as ClientB
 actor "User Beta\n(Recipient)" as UserB
 

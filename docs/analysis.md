@@ -54,7 +54,7 @@ The DFD models the following requirements from `docs/requirements.md`:
 The DFD makes several critical design realities visible:
 
 1. **Clear Separation Between Persistent Storage and In-Memory Session State:**
-   The diagram reveals that a relational database cannot efficiently handle real-time socket delivery on its own. While Data Stores D1 through D4 persist state to disk, active socket routing requires an ephemeral in-memory registry (`Active WebSocket Connection Hub`). This hub maintains active connection handles mapped to user IDs, allowing processes to look up target sockets without polling the database.
+   The diagram reveals that a MongoDB database cannot efficiently handle real-time socket delivery on its own. While Data Stores D1 through D4 persist state to disk, active socket routing requires an ephemeral in-memory registry (`Active WebSocket Connection Hub`). This hub maintains active connection handles mapped to user IDs, allowing processes to look up target sockets without polling the database.
 2. **Centralized Authentication Dependency:**
    Processes 2.0, 3.0, and 4.0 have a strict upstream dependency on Process 1.0 (or shared auth middleware). No messaging or channel transaction can occur without first transforming a raw session token into a verified user identity.
 3. **Decoupled Messaging Paths:**
